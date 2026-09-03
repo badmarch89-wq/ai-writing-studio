@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# skill-creatorなどのベンダー化されたスキルツール一式（skills-lock.jsonで再インストール可能）
+.agents/
+.claude/skills/skill-creator

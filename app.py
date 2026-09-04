@@ -1,7 +1,4 @@
-import os
-
 import streamlit as st
-from dotenv import load_dotenv
 
 from gemini_client import get_client
 from style import CUSTOM_CSS
@@ -14,8 +11,6 @@ from tools import (
     render_tone_converter,
     render_translator,
 )
-
-load_dotenv()
 
 st.set_page_config(page_title="AI Writing Studio", page_icon="✍️", layout="wide")
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
@@ -70,18 +65,13 @@ def go_to(tool_key: str):
 with st.sidebar:
     st.markdown("## ✍️ AI Writing Studio")
 
-    env_api_key = os.getenv("GEMINI_API_KEY")
-    if env_api_key:
-        api_key = env_api_key
-        st.caption("API Key: 環境変数から読み込み済み")
-    else:
-        api_key = st.text_input(
-            "Gemini API Key",
-            type="password",
-            value=st.session_state.get("api_key", ""),
-            help="環境変数 GEMINI_API_KEY が設定されていないため、ここに入力してください。",
-        )
-        st.session_state["api_key"] = api_key
+    api_key = st.text_input(
+        "Gemini API Key",
+        type="password",
+        value=st.session_state.get("api_key", ""),
+        help="Gemini API Key を入力してください。",
+    )
+    st.session_state["api_key"] = api_key
 
     st.divider()
     nav_options = [HOME_KEY] + list(TOOLS.keys())

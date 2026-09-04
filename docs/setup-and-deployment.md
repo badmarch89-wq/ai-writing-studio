@@ -4,6 +4,7 @@
 
 - 最終更新: 2026-09-04
 - 対象アプリ: `python ai application`（Streamlit + Google Gemini API、DB・認証なしの個人用ツール）
+- 本番URL: https://7uygefsvdfkzcrxxjtbwqt.streamlit.app/（Streamlit Community Cloud、Privateリポジトリ連携）
 
 ---
 
@@ -72,7 +73,8 @@ cp .env.example .env
 
 - キーは [Google AI Studio](https://aistudio.google.com/apikey) で発行。
 - `.gitignore` に `.env` を必ず含める（本プロジェクトでは最初から設定済み）。
-- アプリ側は「環境変数優先、未設定ならサイドバーで手入力」という二段構えにしておくと、他人に配布してもキーを埋め込まずに動かせる（本プロジェクトの `app.py` の実装方針）。手入力されたキーは `st.session_state` にのみ保持し、ファイルには書き出さない。
+- **方式の変遷**: 当初は「環境変数優先、未設定ならサイドバーで手入力」の二段構えにしていたが、利用者本人が費用発生タイミングを把握・管理しやすいよう、**常にサイドバーで手入力する方式に変更**した（`.env`・環境変数からの自動読み込みは廃止）。入力されたキーは `st.session_state` にのみ保持し、ファイルには書き出さない。
+- この方式ならデプロイ先（Streamlit Community Cloud）の Secrets にキーを登録する必要がなく、Privateリポジトリと組み合わせても鍵の管理箇所が「自分の頭の中」だけで完結する。
 
 ### 2.2 Streamlitのテーマ設定（`.streamlit/config.toml`）
 
@@ -83,6 +85,23 @@ cp .env.example .env
 
 - Gemini のモデルIDはハードコードせず、辞書などで一箇所にまとめておく（本プロジェクトでは `app.py` の `MODEL_OPTIONS`）。
 - Gemini側でモデルが廃止・置き換えになることがあるため、定期的に有効なモデルIDか確認が必要（詳細は「4. 注意事項」参照）。
+- 現在の選択肢（2026-09-04時点）: `gemini-3.6-flash`（速い・普段使い）／ `gemini-3.1-pro-preview`（高精度）。旧 `gemini-2.5-flash` / `gemini-2.5-pro` は新規ユーザー向けに廃止済みで置き換えた。
+
+### 2.4 Streamlit Community Cloud へのデプロイ
+
+無料でアプリを公開URL化できるサービス。GitHubリポジトリと連携するだけでデプロイできる。
+
+1. https://share.streamlit.io にGitHubアカウントでログイン
+2. 「Create app」→「Deploy a public app from GitHub」
+3. Repository / Branch / Main file path（`app.py`）を指定してデプロイ
+
+**得られたURL（本プロジェクト）**: https://7uygefsvdfkzcrxxjtbwqt.streamlit.app/
+
+**注意点:**
+
+- リポジトリが Private でも Streamlit Cloud（無料枠）はGitHub連携で読み取れるが、**デプロイされたアプリ自体は誰でもアクセスできる公開URL**になる。他人に使われたくない場合はパスワード保護や有料プランでのプライベート化を検討する。
+- コードをGitHubにプッシュすると自動的に再デプロイされるが、反映が遅れる／効かないことがあるため、確実に最新化したい場合は管理画面から手動で **「Reboot app」** を実行する。
+- APIキーを毎回手入力する方式にしているため、Secrets（環境変数）欄には何も設定していない。
 
 ---
 
@@ -115,9 +134,24 @@ streamlit.errors.StreamlitWidgetAlreadyInstantiatedError:
 2. 箇条書き（`- ...`）にして `# 条件` セクションとしてプロンプトに埋め込む
 3. ユーザー入力本文は `---` で区切って別セクションとして渡す
 
-### 3.5 Netlifyなど静的ホスティングはStreamlitアプリにはそのまま使えない
+### 3.5 Gemini APIの費用感
 
-Streamlitは常駐するPythonプロセスとして動くため、静的サイトホスティングであるNetlifyでは通常動作しない。本番公開する場合は **Streamlit Community Cloud** か、**コンテナ実行環境（Cloud Run など）** を使う方式を別途検討する必要がある（本プロジェクトは現状ローカル実行のみで、本番デプロイは未設定）。
+- Gemini APIは**トークン数に応じた従量課金**。Google AI Studio経由でクレジットカードなしで使える無料枠があり、Flash系モデルなら1日あたり1000リクエスト超まで無料。
+- **Proモデルは2026年4月以降、無料枠の対象外**になっており、使うと課金が発生する。
+- 課金を有効にすると無料枠が上乗せされるのではなく、**無料枠自体がなくなり全て有料になる**仕様のため、有効化前に使い方を確認しておく。
+- 無料枠のデータはGoogle側のモデル学習に使われる点にも留意する。
+- 費用を抑えたい場合は普段はFlashを選び、高精度が必要な時だけProに切り替える運用が現実的。
+
+### 3.6 Next.js / Drizzle ORM との使い分け（Streamlitの限界を知る）
+
+- **Streamlit**: 個人・社内向けの「動くツール」を最速で作る用途に向く。Pythonのみで完結する代わりに、デザインの自由度・複数ユーザー対応・SEOには弱い。
+- **Next.js**: 不特定多数に公開する製品として育てたい場合に向く。認証・DB連携・SEO・デザインの自由度は高いが、フロントエンド実装のコストがかかる。バックエンドはPython（FastAPIなど）を別途用意してAPI経由で繋ぐ構成が一般的。
+- DBを使う機能（生成履歴の保存など）を追加する場合、Next.js側では **Drizzle ORM**（SQLに近い書き味・型安全・軽量でサーバーレスと相性が良いTypeScript向けORM）などが選択肢になる。本プロジェクトは現状DBを持たないため未使用。
+- 目安: 「自分や身内が使えればいい・検証段階」→ Streamlit、「他人に配布・公開する製品にしたい」→ Next.js。まずStreamlitでプロトタイプを検証し、必要になったらNext.js化する進め方もよくある。
+
+### 3.7 Netlifyなど静的ホスティングはStreamlitアプリにはそのまま使えない
+
+Streamlitは常駐するPythonプロセスとして動くため、静的サイトホスティングであるNetlifyでは通常動作しない。本番公開する場合は **Streamlit Community Cloud**（本プロジェクトで採用、2.4節参照）か、**コンテナ実行環境（Cloud Run など）** を使う方式を検討する。
 
 ---
 
@@ -167,3 +201,4 @@ LLM APIをラップするアプリはDBも認証もないことが多く、典�
 ## 更新履歴
 
 - 2026-09-04: 初版作成（GitHub連携・ローカル実行手順）→ 全セッションを踏まえ、環境準備・設定・豆知識・注意事項を含む包括的なガイドに再構成
+- 2026-09-04: APIキーを常にサイドバー手入力する方式に変更（環境変数からの自動読み込みを廃止）／Streamlit Community Cloudへデプロイし本番URLを発行／Gemini APIの費用感、Next.js・Drizzle ORMとの使い分けを追記

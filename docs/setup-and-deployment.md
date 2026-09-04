@@ -149,7 +149,11 @@ streamlit.errors.StreamlitWidgetAlreadyInstantiatedError:
 - DBを使う機能（生成履歴の保存など）を追加する場合、Next.js側では **Drizzle ORM**（SQLに近い書き味・型安全・軽量でサーバーレスと相性が良いTypeScript向けORM）などが選択肢になる。本プロジェクトは現状DBを持たないため未使用。
 - 目安: 「自分や身内が使えればいい・検証段階」→ Streamlit、「他人に配布・公開する製品にしたい」→ Next.js。まずStreamlitでプロトタイプを検証し、必要になったらNext.js化する進め方もよくある。
 
-### 3.7 Netlifyなど静的ホスティングはStreamlitアプリにはそのまま使えない
+### 3.7 GitHub Codespaces用の `.devcontainer`
+
+GitHub上のWeb UI操作で `.devcontainer/devcontainer.json` が追加され、GitHub Codespaces（ブラウザ上の開発環境）でこのリポジトリを開くと、Python 3.11環境の構築・`requirements.txt`のインストール・`streamlit run app.py`の起動までが自動化される設定が入った。ローカルの `.venv` を使わずにブラウザだけで開発を続けたい場合に使える。ローカル開発の手順（1.2節）とは独立した別経路なので、`.venv`側の運用に影響はない。
+
+### 3.8 Netlifyなど静的ホスティングはStreamlitアプリにはそのまま使えない
 
 Streamlitは常駐するPythonプロセスとして動くため、静的サイトホスティングであるNetlifyでは通常動作しない。本番公開する場合は **Streamlit Community Cloud**（本プロジェクトで採用、2.4節参照）か、**コンテナ実行環境（Cloud Run など）** を使う方式を検討する。
 
@@ -202,3 +206,4 @@ LLM APIをラップするアプリはDBも認証もないことが多く、典�
 
 - 2026-09-04: 初版作成（GitHub連携・ローカル実行手順）→ 全セッションを踏まえ、環境準備・設定・豆知識・注意事項を含む包括的なガイドに再構成
 - 2026-09-04: APIキーを常にサイドバー手入力する方式に変更（環境変数からの自動読み込みを廃止）／Streamlit Community Cloudへデプロイし本番URLを発行／Gemini APIの費用感、Next.js・Drizzle ORMとの使い分けを追記
+- 2026-09-04: GitHub Web UIで追加された `.devcontainer/devcontainer.json`（GitHub Codespaces対応）について追記
